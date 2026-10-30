@@ -1,0 +1,47 @@
+[
+  {"id": "restaurant", "name": "餐廳", "group": "餐飲", "rules": ["amenity=restaurant"]},
+  {"id": "cafe", "name": "咖啡廳", "group": "餐飲", "rules": ["amenity=cafe"]},
+  {"id": "sweetshop", "name": "甜點店", "group": "餐飲", "rules": ["shop=pastry"]},
+  {"id": "bakery", "name": "麵包店", "group": "餐飲", "rules": ["shop=bakery"]},
+  {"id": "fastfood", "name": "速食店", "group": "餐飲", "rules": ["amenity=fast_food"]},
+  {"id": "sushi", "name": "壽司店", "group": "餐飲", "rules": ["cuisine=sushi"]},
+  {"id": "italian", "name": "義式餐廳", "group": "餐飲", "rules": ["cuisine=pizza|mediterranean"]},
+  {"id": "ramen", "name": "拉麵・麵店", "group": "餐飲", "rules": ["cuisine=chinese|noodle|ramen|udon|soba"]},
+  {"id": "curry", "name": "咖哩店", "group": "餐飲", "rules": ["cuisine=curry|indian|sri_lankan"]},
+  {"id": "mexican", "name": "墨西哥餐廳", "group": "餐飲", "rules": ["cuisine=mexican"]},
+  {"id": "korean", "name": "韓式餐廳", "group": "餐飲", "rules": ["cuisine=korean"]},
+
+  {"id": "convenience", "name": "便利商店", "group": "商店", "rules": ["shop=convenience"]},
+  {"id": "supermarket", "name": "超市", "group": "商店", "rules": ["shop=supermarket"]},
+  {"id": "clothes", "name": "服飾・鞋店", "group": "商店", "rules": ["shop=clothes|shoes"]},
+  {"id": "makeup", "name": "化妝品・百貨", "group": "商店", "rules": ["shop=department_store"]},
+  {"id": "appliance", "name": "家電・3C", "group": "商店", "rules": ["shop=appliance|computer|electronics"]},
+  {"id": "diy", "name": "五金・居家修繕", "group": "商店", "rules": ["shop=doityourself|hardware"]},
+  {"id": "stationery", "name": "文具・手作", "group": "商店", "rules": ["shop=stationery|craft"]},
+  {"id": "art", "name": "美術・畫框", "group": "商店", "rules": ["shop=art"]},
+  {"id": "library", "name": "圖書館・書店", "group": "商店", "rules": ["amenity=library", "shop=books"]},
+
+  {"id": "pharmacy", "name": "藥局", "group": "生活服務", "rules": ["amenity=pharmacy"]},
+  {"id": "post", "name": "郵局", "group": "生活服務", "rules": ["amenity=post_office"]},
+  {"id": "hair", "name": "美髮沙龍", "group": "生活服務", "rules": ["shop=hairdresser"]},
+  {"id": "laundry", "name": "洗衣店", "group": "生活服務", "rules": ["shop=laundry|dry_cleaning"]},
+  {"id": "university", "name": "大學・學院", "group": "生活服務", "rules": ["amenity=university|college"]},
+
+  {"id": "airport", "name": "機場", "group": "交通", "rules": ["aeroway=aerodrome"]},
+  {"id": "station", "name": "車站", "group": "交通", "rules": ["railway=station", "building=train_station"]},
+  {"id": "busstop", "name": "公車站", "group": "交通", "rules": ["highway=bus_stop"]},
+  {"id": "bridge", "name": "橋", "group": "交通", "rules": ["bridge=yes"]},
+
+  {"id": "forest", "name": "森林", "group": "自然", "rules": ["natural=wood", "landuse=forest"]},
+  {"id": "water", "name": "水邊", "group": "自然", "rules": ["natural=water"]},
+  {"id": "beach", "name": "海灘", "group": "自然", "rules": ["natural=beach"]},
+  {"id": "peak", "name": "山頂", "group": "自然", "rules": ["natural=peak"]},
+  {"id": "park", "name": "公園", "group": "自然", "rules": ["leisure=park"]},
+
+  {"id": "zoo", "name": "動物園", "group": "觀光休閒", "rules": ["tourism=zoo"]},
+  {"id": "themepark", "name": "主題樂園", "group": "觀光休閒", "rules": ["tourism=theme_park"]},
+  {"id": "stadium", "name": "體育場", "group": "觀光休閒", "rules": ["leisure=stadium"]},
+  {"id": "hotel", "name": "飯店", "group": "觀光休閒", "rules": ["tourism=hotel"]},
+  {"id": "cinema", "name": "電影院", "group": "觀光休閒", "rules": ["amenity=cinema"]},
+  {"id": "shrine", "name": "神社・寺廟(僅日本)", "group": "觀光休閒", "rules": ["amenity=place_of_worship"]}
+]
