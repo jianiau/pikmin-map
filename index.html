@@ -447,6 +447,27 @@
     .tb-empty { color: var(--muted); padding: 6px 2px; }
     #tbNote { margin: 0; color: var(--muted); font-size: 12px; }
 
+    /* 定位點:藍點 + 面向方向的扇形(像 Google 地圖);--me-cone 由 JS 依設定區的 ME_CONE_DEG 設定 */
+    .me-wrap { background: none; border: 0; pointer-events: none; }
+    .me { position: relative; width: 84px; height: 84px; }
+    .me-dot { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; box-sizing: border-box; border-radius: 50%;
+              background: #2f7bc0; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, .45); }
+    .me-cone { position: absolute; inset: 0; border-radius: 50%; transition: transform .12s linear;
+               background: conic-gradient(from calc(var(--me-cone, 64deg) * -0.5) at 50% 50%, rgba(47, 123, 192, .8) 0deg var(--me-cone, 64deg), transparent var(--me-cone, 64deg));
+               -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 8%, rgba(0, 0, 0, 0) 70%);
+               mask-image: radial-gradient(circle at 50% 50%, #000 8%, rgba(0, 0, 0, 0) 70%); }
+    .me.nohead .me-cone { display: none; }
+    /* 🧭 地圖方向:北方在上 ⇄ 面向的方位在上(手機版,在右側按鈕列最上面) */
+    #rotFab { position: fixed; right: 14px; bottom: calc(var(--s2-b) + 232px); z-index: 1000; width: 48px; height: 48px; padding: 0;
+              border-radius: 50%; display: grid; place-items: center; box-shadow: 0 3px 10px rgba(0, 0, 0, .28); }
+    #rotFab[hidden] { display: none; }
+    #rotFab svg { width: 28px; height: 28px; transition: transform .15s linear; }
+    #rotFab .rot-n { fill: #d93025; }
+    #rotFab .rot-s { fill: #8a948d; }
+    #rotFab circle { fill: #fff; stroke: #5a625d; stroke-width: .8; }
+    #rotFab[aria-pressed=true] { background: var(--sky); border-color: var(--sky); }
+    #rotFab[aria-pressed=true] .rot-s { fill: #fff; }
+    html.touch-ui #rotFab { bottom: calc(var(--s2-b) + 290px); }
     /* 探測清單(任務清單) */
     #plBadge { margin-left: 2px; font-size: 11px; font-weight: 700; color: #7a5cc2; }
     #plItems { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -837,6 +858,9 @@
   <button type="button" data-tool="ruler">📏 量測距離</button>
   <button type="button" data-tool="pick">📍 取得座標</button>
 </div>
+<button type="button" id="rotFab" aria-label="地圖方向:北方在上 / 面向的方位在上" aria-pressed="false" hidden>
+  <svg id="rotIcon" viewBox="0 0 24 24" aria-hidden="true"><path class="rot-n" d="M12 2.5 17 12H7z"/><path class="rot-s" d="M12 21.5 7 12h10z"/><circle cx="12" cy="12" r="1.7"/></svg>
+</button>
 <button type="button" id="typeFab" aria-label="探測類型開關" aria-pressed="false" title="探測類型開關" hidden><span aria-hidden="true">👁️</span><b id="typeBadge" hidden></b></button>
 <div id="typeBox" hidden>
   <div class="tb-head"><b id="tbCount">顯示 0 / 0 種</b><button type="button" id="tbOn">全開</button><button type="button" id="tbOff">全關</button></div>
@@ -889,6 +913,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js" onerror="window._rotLoadFail = true"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script>
@@ -937,7 +962,31 @@
   let api = httpApi;
 
   /* ---------------------------------------------------------------- 地圖 */
-  const map = L.map('map', { preferCanvas: true }).setView([24.83, 121.01], 12);
+  /* ================================================================
+     地圖旋轉與定位方向的設定(改完存檔、重新整理就生效)
+     ================================================================ */
+  // MAP_ROTATE:手機版要不要啟用「地圖旋轉」(右側 🧭:北方在上 ⇄ 面向的方位在上)。需要上面載入的 leaflet-rotate 外掛。
+  //   如果發現地圖顯示或操作怪怪的(群集、繪圖工具、點選位置不準…),把它改成 false:整個旋轉功能停用,地圖和以前完全一樣;
+  //   定位點上的「面向扇形」不受影響。桌面版本來就不會啟用旋轉。
+  const MAP_ROTATE = true;
+  // ROT_SIGN:旋轉方向。0 = 自動偵測(建議)。如果面向東時北方沒有跑到畫面左邊(轉反了),手動改成 1 或 -1 試試。
+  const ROT_SIGN = 0;
+  // ROT_MIN_DEG:面向的方位變化小於這個角度就不轉地圖(調大 = 更穩、更不容易抖;調小 = 更跟手)。
+  const ROT_MIN_DEG = 4;
+  // ROT_INTERVAL_MS:地圖最多多久轉一次(毫秒)。轉地圖比較吃力,卡的話調大(例如 200)。
+  const ROT_INTERVAL_MS = 120;
+  // HEADING_SMOOTH:指南針平滑程度,0~1。小 = 穩但反應慢;大 = 反應快但會抖。
+  const HEADING_SMOOTH = 0.3;
+  // HEADING_STALE_MS:指南針多久沒更新就當作失效(毫秒),失效後改用 GPS 行進方向。
+  const HEADING_STALE_MS = 3000;
+  // GPS_HEADING_MIN_SPEED:用 GPS 行進方向當面向時,至少要走多快(公尺/秒);太慢時 GPS 的方向不準。
+  const GPS_HEADING_MIN_SPEED = 0.7;
+  // ME_CONE_DEG:定位點面向扇形的張角(度)。想要窄一點的光束就調小,例如 45。
+  const ME_CONE_DEG = 64;
+
+  const ROT_ON = MAP_ROTATE && window.matchMedia('(max-width: 800px)').matches;      // 只在手機版建立可旋轉的地圖
+  const map = L.map('map', { preferCanvas: true, rotate: ROT_ON, bearing: 0, touchRotate: false, shiftKeyRotate: false,
+                             rotateControl: false }).setView([24.83, 121.01], 12);      // 不開手勢旋轉:避免誤觸,方向由 🧭 控制
   L.tileLayer(CFG.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: CFG.maxZoom || 19, attribution: CFG.attribution || '© OpenStreetMap contributors' }).addTo(map);
   const cluster = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 45,
@@ -1557,22 +1606,24 @@
     loc.ll = ll; loc.acc = pos.coords.accuracy;
     if (!loc.dot) {
       loc.ring = L.circle(ll, { radius: loc.acc, color: '#2f7bc0', weight: 1, fillOpacity: .12, interactive: false }).addTo(map);
-      loc.dot = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 3, fillColor: '#2f7bc0', fillOpacity: 1,
-                                     interactive: false }).addTo(map);
+      loc.dot = L.marker(ll, { icon: meIcon(), interactive: false, keyboard: false, zIndexOffset: 1000 }).addTo(map);   // 藍點 + 面向扇形
     } else {
       loc.ring.setLatLng(ll).setRadius(loc.acc); loc.dot.setLatLng(ll);
     }
     if (centerNow || loc.follow) map.setView(ll, Math.max(map.getZoom(), 16));
     loc.gps = { h: Number.isFinite(pos.coords.heading) ? pos.coords.heading : null, v: pos.coords.speed || 0, t: Date.now() };   // 行進方向(探測清單的「朝前」備用)
+    meUpdate();                                       // 行進方向更新了,扇形也跟著轉
     setFab();
     if (window._plReady) plistTick();                 // 探測清單的距離 / 方向跟著更新
   }
   function stopWatch() {
     if (loc.watchId != null) navigator.geolocation.clearWatch(loc.watchId);
     loc.watchId = null;
+    hdgStop('me');
   }
   function startWatch(centerOnFirst) {
     if (!navigator.geolocation) return setStatus('這個環境不支援定位', true);
+    if (wantCompass()) hdgStart('me');                // 定位點要顯示面向:要指南針(iOS 要在點擊的當下呼叫)
     if (loc.watchId != null) return;
     let first = true;
     loc.watchId = navigator.geolocation.watchPosition(pos => {
@@ -1589,6 +1640,7 @@
     setFab();
   }
   $('#locateFab').onclick = () => {
+    if (wantCompass()) hdgStart('me');                // 已經在定位、但指南針之前沒要到權限(iOS)時,這裡補要一次
     if (loc.watchId == null) return startWatch(true);
     if (!loc.ll) return setStatus('定位中…');
     loc.follow = true;
@@ -1600,6 +1652,129 @@
     if (document.hidden && loc.watchId != null) { stopWatch(); loc.paused = true; }
     else if (!document.hidden && loc.paused) { loc.paused = false; startWatch(false); }
   });
+
+  /* ---------------------------------------------------------------- 方位:指南針、定位點的面向扇形、地圖旋轉
+     指南針只監聽一次,三個功能共用:① 定位點上的面向扇形 ② 地圖旋轉(🧭)③ 探測清單的「朝前」箭頭。
+     沒有指南針(或沒權限)時,改用 GPS 的行進方向(要在移動中才有)。設定見檔案前面「地圖旋轉與定位方向的設定」。 */
+  const hdg = { users: new Set(), on: false, h: null, t: 0, last: 0, note: '', subs: new Set() };
+  const hdgDiff = (a, b) => ((a - b + 540) % 360 + 360) % 360 - 180;               // a 相對 b 的角度差 [-180, 180)
+  const hdgSubscribe = f => { hdg.subs.add(f); return () => hdg.subs.delete(f); };
+  const wantCompass = () => isMobile() || isCoarse();                                // 只在手機 / 觸控裝置才去要指南針
+
+  function hdgOri(e) {
+    let h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;   // iOS:已是相對正北
+    else if (e.absolute === true && typeof e.alpha === 'number') h = (360 - e.alpha) % 360;                          // Android:deviceorientationabsolute
+    if (h == null) return;
+    h = (h + ((screen.orientation && screen.orientation.angle) || 0) + 360) % 360;                                   // 補償螢幕轉向
+    hdg.h = hdg.h == null ? h : (hdg.h + HEADING_SMOOTH * hdgDiff(h, hdg.h) + 360) % 360;                           // 平滑一下,不然會一直抖
+    hdg.t = Date.now();
+    const now = performance.now();
+    if (now - hdg.last > 100) { hdg.last = now; hdg.subs.forEach(f => { try { f(); } catch (err) { /* 單一訂閱者出錯不影響其他人 */ } }); }
+  }
+  async function hdgStart(user) {                  // 有人要用就開(重複呼叫沒關係);iOS 要在點擊的當下呼叫才拿得到權限
+    hdg.users.add(user);
+    if (hdg.on) return true;
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'
+          && (await DeviceOrientationEvent.requestPermission()) !== 'granted') {
+        hdg.note = '沒有指南針權限。請在瀏覽器設定允許「動作與方向」,再點一次。'; return false;
+      }
+    } catch (e) { hdg.note = '需要手動點一下才能啟用指南針(系統要求):點右下角定位或 🧭。'; return false; }
+    if (typeof window.DeviceOrientationEvent === 'undefined') { hdg.note = '這個裝置沒有指南針,改用走路的行進方向。'; return false; }
+    if (hdg.on) return true;
+    window.addEventListener('deviceorientationabsolute', hdgOri, true);
+    window.addEventListener('deviceorientation', hdgOri, true);
+    hdg.on = true; hdg.note = ''; return true;
+  }
+  function hdgStop(user) {                         // 沒有人在用了才真的關掉(省電)
+    hdg.users.delete(user);
+    if (hdg.users.size || !hdg.on) return;
+    window.removeEventListener('deviceorientationabsolute', hdgOri, true);
+    window.removeEventListener('deviceorientation', hdgOri, true);
+    hdg.on = false; hdg.h = null;
+  }
+  function hdgGet() {                              // 目前面向的方位 { deg, src }:指南針(最近有更新)> 行進方向(正在移動)> null
+    if (hdg.h != null && Date.now() - hdg.t < HEADING_STALE_MS) return { deg: hdg.h, src: 'compass' };
+    const g = loc.gps;
+    if (g && g.h != null && g.v > GPS_HEADING_MIN_SPEED && Date.now() - g.t < 5000) return { deg: g.h, src: 'gps' };
+    return null;
+  }
+
+  /* ---- 定位點:藍點 + 面向方向的扇形(像 Google 地圖) */
+  document.documentElement.style.setProperty('--me-cone', ME_CONE_DEG + 'deg');
+  const meIcon = () => L.divIcon({ className: 'me-wrap', iconSize: [84, 84], iconAnchor: [42, 42],
+                                   html: '<div class="me nohead"><div class="me-cone"></div><div class="me-dot"></div></div>' });
+  function meUpdate() {                            // 扇形角度 = 我面向的方位 - 地圖「上方」的方位(地圖北方在上時就是面向的方位本身)
+    const el = loc.dot && loc.dot.getElement && loc.dot.getElement(), me = el && el.querySelector('.me');
+    if (!me) return;
+    const g = hdgGet();
+    me.classList.toggle('nohead', !g);
+    if (!g) return;
+    const cone = me.querySelector('.me-cone'), want = g.deg - rot.bearing;
+    const cur = cone.dataset.deg === undefined ? want : +cone.dataset.deg, next = cur + hdgDiff(want, cur);   // 走最短的路轉過去
+    cone.dataset.deg = next; cone.style.transform = `rotate(${next}deg)`;
+  }
+  hdgSubscribe(meUpdate);
+
+  /* ---- 地圖旋轉:北方在上 ⇄ 面向的方位在上(手機版,需要 leaflet-rotate 外掛) */
+  const rot = { mode: 'north', bearing: 0, sign: ROT_SIGN, last: 0, cum: null };    // bearing = 目前畫面「上方」朝向的方位(0 = 北方在上)
+  const rotReady = () => ROT_ON && typeof map.setBearing === 'function';
+  function rotSign() {                             // setBearing(+h) 到底是「h 方位在上」還是反過來?實際試一次就知道,不靠外掛的慣例
+    if (rot.sign) return rot.sign;
+    let s = 0;
+    try {
+      const keep = map.getBearing ? map.getBearing() : 0;
+      map.setBearing(0);
+      const sz = map.getSize(), cx = sz.x / 2, cy = sz.y / 2, north = map.containerPointToLatLng([cx, cy - 100]);   // 畫面中心正北方 100px 的點
+      map.setBearing(90);
+      const dx = map.latLngToContainerPoint(north).x - cx;
+      map.setBearing(keep);
+      if (Math.abs(dx) > 1) s = dx < 0 ? 1 : -1;   // 面向東(90°)時,北方應該跑到畫面左邊:dx < 0 → setBearing(+h) 就是「h 在上」
+    } catch (e) { /* 偵測失敗就用預設 */ }
+    if (!s) console.warn('地圖旋轉方向偵測失敗,先假設 +1;如果轉反了,把設定區的 ROT_SIGN 改成 -1');
+    return (rot.sign = s || 1);
+  }
+  function rotApply(deg) {                         // 讓畫面上方朝向 deg 方位;0 = 北方在上
+    rot.bearing = ((deg % 360) + 360) % 360;
+    if (rotReady()) { try { map.setBearing(rotSign() * rot.bearing); } catch (e) { console.warn('setBearing 失敗', e); } }
+    const icon = $('#rotIcon'), want = -rot.bearing;                                  // 羅盤針永遠指向北方
+    rot.cum = rot.cum === null ? want : rot.cum + hdgDiff(want, rot.cum);
+    icon.style.transform = `rotate(${rot.cum}deg)`;
+    meUpdate();
+  }
+  function rotOnHeading() {                        // 指南針更新時:跟著轉(只在「面向在上」且地圖跟著我時;手動拖開地圖就先停住)
+    if (rot.mode !== 'heading' || !loc.follow) return;
+    const g = hdgGet(); if (!g) return;
+    if (Math.abs(hdgDiff(g.deg, rot.bearing)) < ROT_MIN_DEG) return;                  // 變化太小不轉,畫面比較穩
+    const now = performance.now(); if (now - rot.last < ROT_INTERVAL_MS) return;
+    rot.last = now; rotApply(g.deg);
+  }
+  hdgSubscribe(rotOnHeading);
+  function rotFabSync() {
+    const show = isMobile() && rotReady(), f = $('#rotFab'), on = rot.mode === 'heading';
+    f.hidden = !show;
+    f.setAttribute('aria-pressed', String(on));
+    f.title = on ? '目前:面向的方位在上(點一下改成北方在上)' : '目前:北方在上(點一下改成面向的方位在上)';
+    if (!show && on) rotSet('north');              // 離開手機版:回到北方在上
+  }
+  function rotSet(mode) {
+    if (mode === 'heading') {
+      if (!rotReady()) { setStatus(window._rotLoadFail ? '地圖旋轉外掛沒載入成功(網路?),只能北方在上' : '地圖旋轉只在手機版可用', true); return; }
+      rot.mode = 'heading';
+      hdgStart('rot');                             // iOS:要在點擊的當下要權限
+      if (loc.watchId == null) startWatch(true);   // 面向在上要有位置,才知道要以哪裡為中心轉
+      else if (loc.ll) { loc.follow = true; map.setView(loc.ll, Math.max(map.getZoom(), 16)); setFab(); }
+      const g = hdgGet();
+      if (g) rotApply(g.deg); else setStatus('地圖會跟著你面對的方向轉。還沒有方向資料:手機要有指南針,或走動一下。');
+    } else {
+      rot.mode = 'north'; hdgStop('rot'); rotApply(0);
+    }
+    rotFabSync();
+  }
+  $('#rotFab').onclick = () => rotSet(rot.mode === 'heading' ? 'north' : 'heading');
+  mqMobile.addEventListener('change', rotFabSync);
+  rotFabSync();
 
 
 
@@ -2766,7 +2941,7 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
     iconCreateFunction: c => L.divIcon({ html: `<div><span>${c.getChildCount()}</span></div>`,
                                          className: 'marker-cluster probe-cluster', iconSize: L.point(40, 40) }) });
   const probeDots = L.featureGroup();                                  // 'canvas' 模式用的圖層:所有點直接放這裡,不群集
-  const probeRenderer = L.canvas({ padding: .5 });                      // 'canvas' 模式專用的畫布
+  // const probeRenderer = L.canvas({ padding: .5 });                      // 'canvas' 模式專用的畫布
   const probeHost = () => probe.render === 'canvas' ? probeDots : probeCluster;
   function probeLayerClear() { probeCluster.clearLayers(); probeDots.clearLayers(); }
   function probeLayerAdd(ms) { if (probe.render === 'canvas') ms.forEach(m => probeDots.addLayer(m)); else probeCluster.addLayers(ms); }
@@ -2908,7 +3083,8 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   function probeRender() {
     probeLayerClear();
     syncPads();
-    const rows = probe.results, dot = probe.render === 'canvas' ? { renderer: probeRenderer } : {};
+    //const rows = probe.results, dot = probe.render === 'canvas' ? { renderer: probeRenderer } : {};
+    const rows = probe.results, dot = probe.render === 'canvas' ;
     probe.markers = rows.map(it => {
       const m = L.circleMarker([it.lat, it.lon], { ...PROBE_DOT, ...dot, color: '#1c2a22',
                                                    fillColor: probeColor(it.n), fillOpacity: .95 });
@@ -3249,7 +3425,6 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
 
   const plist = { items: [], hud: PLIST_HUD_DEFAULT, mode: 'north', target: null, ref: null, h: null, order: null, sortAt: 0,
                   layer: L.layerGroup().addTo(map), markers: new Map(), line: null, timer: 0, lastTick: 0 };
-  const plCompass = { on: false, h: null, t: 0, last: 0, note: '' };
   const PL_ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 19 20 12 16.2 5 20z"/></svg>';
   const PL_IN = '★ 已在清單(點一下移除)', PL_OUT = '☆ 加入探測清單';
 
@@ -3271,12 +3446,10 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
 
   /* ---- 即時計算:從哪裡算(我的位置,沒有定位就用畫面中心)、面對哪個方向 */
   const plistRef = () => loc.ll ? { lat: loc.ll.lat, lng: loc.ll.lng, gps: true } : (c => ({ lat: c.lat, lng: c.lng, gps: false }))(viewCenter());
-  function plistHeading() {                        // 朝前模式才需要:指南針(3 秒內有更新)> 行進方向(正在移動時)> 沒有
+  function plistHeading() {                        // 朝前模式才需要:用共用的方位(指南針 > 行進方向 > 沒有)
     if (plist.mode !== 'heading') return null;
-    if (plCompass.h != null && Date.now() - plCompass.t < 3000) return plCompass.h;
-    const g = loc.gps;
-    if (g && g.h != null && g.v > 0.7 && Date.now() - g.t < 5000) return g.h;
-    return null;
+    const g = hdgGet();
+    return g ? g.deg : null;
   }
   function plistCompute() {
     plist.ref = plistRef(); plist.h = plistHeading();
@@ -3335,7 +3508,7 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   function plistModeNote() {
     $('#plModeNote').textContent = plist.mode === 'north' ? '箭頭朝上 = 正北,和地圖的方向一致。'
       : plistHeading() != null ? '箭頭朝上 = 你面對的方向。'
-      : (plCompass.note || '正在取得方向…手機要有指南針;或走動一下,改用行進方向。目前箭頭暫時朝北。');
+      : (hdg.note || '正在取得方向…手機要有指南針;或走動一下,改用行進方向。目前箭頭暫時朝北。');
   }
 
   /* ---- 目標卡(地圖左下角)+ 連線 */
@@ -3483,41 +3656,15 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   });
 
   /* ---- 箭頭模式:朝北 / 朝前(指南針) */
-  function plOri(e) {
-    let h = null;
-    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;   // iOS
-    else if (e.absolute === true && typeof e.alpha === 'number') h = (360 - e.alpha) % 360;                          // Android
-    if (h == null) return;
-    h = (h + ((screen.orientation && screen.orientation.angle) || 0) + 360) % 360;
-    plCompass.h = plCompass.h == null ? h : (plCompass.h + 0.3 * angDiff(h, plCompass.h) + 360) % 360;              // 平滑一下,箭頭才不會抖
-    plCompass.t = Date.now();
-    const now = performance.now();
-    if (now - plCompass.last > 200) { plCompass.last = now; plistRenderList(false); plistHud(); plistModeNote(); }
-  }
-  async function plCompassStart() {
-    if (plCompass.on) return true;
-    try {
-      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'
-          && (await DeviceOrientationEvent.requestPermission()) !== 'granted') { plCompass.note = '沒有指南針權限。請在瀏覽器設定允許「動作與方向」,再點一次「朝前」。'; return false; }
-    } catch (e) { plCompass.note = '需要在這裡點一下「朝前」才能啟用指南針(系統要求要手動操作)。'; return false; }
-    if (typeof window.DeviceOrientationEvent === 'undefined') { plCompass.note = '這個裝置沒有指南針,改用走路的行進方向。'; return false; }
-    window.addEventListener('deviceorientationabsolute', plOri, true);
-    window.addEventListener('deviceorientation', plOri, true);
-    plCompass.on = true; plCompass.note = ''; return true;
-  }
-  function plCompassStop() {
-    window.removeEventListener('deviceorientationabsolute', plOri, true);
-    window.removeEventListener('deviceorientation', plOri, true);
-    plCompass.on = false; plCompass.h = null;
-  }
   async function plistSetMode(m, persist = true) {
     plist.mode = m === 'heading' ? 'heading' : 'north';
     document.querySelectorAll('#plMode button').forEach(b => { const on = b.dataset.m === plist.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
-    if (plist.mode === 'heading') await plCompassStart(); else plCompassStop();
+    if (plist.mode === 'heading') await hdgStart('plist'); else hdgStop('plist');
     if (persist) plistSave();
     plistRenderList(true); plistHud(); plistModeNote();
   }
   $('#plMode').addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (b) plistSetMode(b.dataset.m); });
+  hdgSubscribe(() => { if (plist.mode === 'heading') { plistRenderList(false); plistHud(); plistModeNote(); } });   // 指南針更新 → 清單箭頭跟著轉
 
   plistLoad();
   $('#plHudOn').checked = plist.hud;
