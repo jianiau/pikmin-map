@@ -303,8 +303,8 @@
 
       #sheetHandle { display: block; flex: none; padding: 10px 0 8px; touch-action: none; cursor: grab; height: 50px}
       #sheetHandle span { display: block; width: 44px; height: 5px; margin: 0 auto; border-radius: 3px; background: #b9cbbd; }
-      #tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 0 12px 10px; flex: none; }
-      #tabs button { padding: 8px 4px; border-radius: 999px; }
+      #tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding: 0 12px 10px; flex: none; }
+      #tabs button { padding: 8px 2px; border-radius: 999px; }
       #tabs button[aria-selected=true] { background: var(--leaf); border-color: var(--leaf); color: #fff; font-weight: 600; }
 
       #scroll { padding: 2px 16px 12px; }
@@ -458,7 +458,7 @@
                mask-image: radial-gradient(circle at 50% 50%, #000 8%, rgba(0, 0, 0, 0) 70%); }
     .me.nohead .me-cone { display: none; }
     /* 🧭 地圖方向:北方在上 ⇄ 面向的方位在上(手機版,在右側按鈕列最上面) */
-    #rotFab { position: fixed; right: 14px; bottom: calc(var(--s2-b) + 232px); z-index: 1000; width: 48px; height: 48px; padding: 0;
+    #rotFab { position: fixed; right: 14px; bottom: calc(var(--s2-b) + 290px); z-index: 1000; width: 48px; height: 48px; padding: 0;
               border-radius: 50%; display: grid; place-items: center; box-shadow: 0 3px 10px rgba(0, 0, 0, .28); }
     #rotFab[hidden] { display: none; }
     #rotFab svg { width: 28px; height: 28px; transition: transform .15s linear; }
@@ -467,7 +467,31 @@
     #rotFab circle { fill: #fff; stroke: #5a625d; stroke-width: .8; }
     #rotFab[aria-pressed=true] { background: var(--sky); border-color: var(--sky); }
     #rotFab[aria-pressed=true] .rot-s { fill: #fff; }
-    html.touch-ui #rotFab { bottom: calc(var(--s2-b) + 290px); }
+    html.touch-ui #rotFab { bottom: calc(var(--s2-b) + 348px); }
+    #evList { list-style: none; margin: 8px 0 0; padding: 0; }
+    #evList button { display: flex; width: 100%; align-items: baseline; gap: 8px; text-align: left; border: 0;
+                    border-bottom: 1px solid var(--line); border-radius: 0; background: none; padding: 7px 2px; }
+    #evList button:hover { background: #e7efe6; }
+    #evList .pd { flex: none; min-width: 66px; font-weight: 600; color: var(--leaf-d); font-variant-numeric: tabular-nums; }
+    #evList .pn { flex: none; min-width: 20px; padding: 0 5px; border-radius: 999px; color: #fff; font-size: 12px; text-align: center; }
+    #evList li { display: flex; align-items: center; }
+    #evList .pmain { flex: 1; min-width: 0; }
+    #evList .pstar { width: auto; flex: none; padding: 6px 12px; font-size: 18px; color: #7a5cc2; }
+    #evList .pn { min-width: 26px; padding: 0 4px; line-height: 1.5; }
+    #evList .pn .ticon { font-size: 13px; }
+    #evList .pd small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+    .evt-sub { color: var(--muted); font-size: 12px; }
+    .chip em { font-style: normal; font-size: 11px; margin-left: 6px; padding: 0 6px; border-radius: 8px; background: #e8ece9; color: var(--muted); }
+    .chip em.st-active { background: #dff3e4; color: #1d6b34; }
+    .chip input:checked + span em { background: rgba(255, 255, 255, .28); color: #fff; }
+    .leaflet-tooltip.evt-tip { background: rgba(255, 255, 255, .95); border: 1px solid #3b2a00; border-radius: 6px; color: #3b2a00; font-weight: 600; padding: 1px 6px; }
+    #evFab { position: fixed; right: 14px; bottom: calc(var(--s2-b) + 232px); z-index: 1000; width: 48px; height: 48px; padding: 0;
+             border-radius: 50%; display: grid; place-items: center; font-size: 22px; line-height: 1; box-shadow: 0 3px 10px rgba(0, 0, 0, .28); }
+    #evFab[hidden] { display: none; }
+    #evFab span { filter: grayscale(1); opacity: .6; }
+    #evFab[aria-pressed=true] { background: #e8731a; border-color: #e8731a; }
+    #evFab[aria-pressed=true] span { filter: none; opacity: 1; }
+    html.touch-ui #evFab { bottom: calc(var(--s2-b) + 290px); }
     /* 探測清單(任務清單) */
     #plBadge { margin-left: 2px; font-size: 11px; font-weight: 700; color: #7a5cc2; }
     #plItems { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -553,6 +577,7 @@
     <button type="button" role="tab" data-tab="custom" aria-selected="false">自訂</button>
     <button type="button" role="tab" data-tab="probe" aria-selected="false">探測</button>
     <button type="button" role="tab" data-tab="plist" aria-selected="false">清單<sup id="plBadge"></sup></button>
+    <button type="button" role="tab" data-tab="evt" aria-selected="false">活動</button>
     <button type="button" role="tab" data-tab="result" id="tabResult" aria-selected="false" disabled>結果</button>
   </nav>
   <div id="scroll">
@@ -743,6 +768,39 @@
       </div>
     </section>
 
+    <section class="pane" data-pane="evt">
+      <h2>活動地點</h2>
+      <p class="hint" style="margin-top:0">期間限定活動會出現的地點。資料來自網站路徑下的 <code>data/events.csv</code>:換活動只要改這個 CSV,重新整理就會更新,不用動網頁。地圖上可以點開看資訊、按 ☆ 加進「探測清單」。</p>
+      <p id="evStatus" class="hint">讀取中…</p>
+      <div class="row">
+        <button type="button" id="evReload">重新讀取</button>
+        <button type="button" id="evLoad">載入 CSV…</button>
+      </div>
+      <input type="file" id="evFile" accept=".csv,.txt,text/csv,text/plain" hidden>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="evOn" style="width:auto;min-height:0"> 在地圖上顯示活動地點</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="evInactive" style="width:auto;min-height:0"> 也顯示不在活動期間內的(已結束 / 尚未開始)</label>
+      <p class="hint" id="evCount"></p>
+      <div id="evGroups" class="chips"></div>
+      <h2 style="margin-top:14px">附近的活動地點</h2>
+      <p class="hint" id="evRef" style="margin-top:0"></p>
+      <p id="evEmpty" class="hint">目前沒有可顯示的活動地點。</p>
+      <ol id="evList"></ol>
+      <div class="row" style="margin-top:8px"><button type="button" id="evMore" hidden>顯示更多</button></div>
+      <details style="margin-top:12px">
+        <summary>CSV 格式說明</summary>
+        <p class="hint">UTF-8(或 Excel 另存的 Big5)編碼,第一列是欄位名稱(中英文都可以)。只有「名稱」和「座標」是必要的:</p>
+        <table class="help">
+          <tr><td><code>名稱</code></td><td>地點名稱(name)</td></tr>
+          <tr><td><code>緯度</code>、<code>經度</code></td><td>(lat、lon)。也可以只用一欄 <code>座標</code>,寫成 <code>24.80,121.00</code>(要加雙引號)。經緯度填反了會自動對調</td></tr>
+          <tr><td><code>活動</code></td><td>選填。活動名稱,同名的算同一個活動,可以在這個分頁分開開關</td></tr>
+          <tr><td><code>開始</code>、<code>結束</code></td><td>選填。日期 <code>2026-10-20</code>;不在期間內的點預設不顯示。只寫結束日期,算到當天結束</td></tr>
+          <tr><td><code>圖示</code></td><td>選填。一個 emoji,或圖片路徑(png / jpg / svg / webp)</td></tr>
+          <tr><td><code>備註</code></td><td>選填。顯示在點開的資訊裡</td></tr>
+        </table>
+        <p class="hint">沒有第一列標題也行,這時欄位依序是:名稱、緯度、經度、活動、開始、結束、圖示、備註。<code>#</code> 開頭的列會被忽略(可以拿來寫註解)。</p>
+      </details>
+    </section>
+
     <section id="result" class="pane" data-pane="result" hidden>
       <h2>結果</h2>
       <div id="total"></div>
@@ -861,6 +919,7 @@
 <button type="button" id="rotFab" aria-label="地圖方向:北方在上 / 面向的方位在上" aria-pressed="false" hidden>
   <svg id="rotIcon" viewBox="0 0 24 24" aria-hidden="true"><path class="rot-n" d="M12 2.5 17 12H7z"/><path class="rot-s" d="M12 21.5 7 12h10z"/><circle cx="12" cy="12" r="1.7"/></svg>
 </button>
+<button type="button" id="evFab" aria-label="活動地點開關" aria-pressed="true" title="活動地點開關" hidden><span aria-hidden="true">🎪</span></button>
 <button type="button" id="typeFab" aria-label="探測類型開關" aria-pressed="false" title="探測類型開關" hidden><span aria-hidden="true">👁️</span><b id="typeBadge" hidden></b></button>
 <div id="typeBox" hidden>
   <div class="tb-head"><b id="tbCount">顯示 0 / 0 種</b><button type="button" id="tbOn">全開</button><button type="button" id="tbOff">全關</button></div>
@@ -1320,6 +1379,7 @@
     }));
     $('#dl').textContent = `下載 CSV(${vis.length.toLocaleString()} 筆)`;
     $('#dl').disabled = !vis.length;
+    if (window._evtReady) evtFrontSoon();            // 活動點留在最上層(群集是分批加入的,所以稍後再拉)
   }
   function renderLegend(res) {
     $('#result').hidden = false;
@@ -2531,6 +2591,22 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   const PLIST_HUD_DEFAULT = true, PLIST_LINE = true, PLIST_VIBRATE = true, PLIST_MAX_TYPES = 6;
   const PLIST_PIN = '⭐', PLIST_PIN_DONE = '✅';
 
+  // ⑭ 活動地點(期間限定活動會出現的地點)。資料放在網站路徑下的 CSV,換活動只要改 CSV、不用動這份網頁。
+  //    EVT_URL:CSV 的位置(相對於這個網頁)。檔案不存在就當作沒有活動,什麼都不會出現。欄位說明在「活動」分頁裡。
+  //    EVT_SHOW_INACTIVE:CSV 有填「開始 / 結束」日期時,不在期間內(尚未開始或已結束)的點,預設要不要也顯示。
+  //                       使用者可以在「活動」分頁改,以他選的為準。
+  //    EVT_RELOAD_MIN:切回這個頁面時,資料超過幾分鐘就重新讀一次 CSV(0 = 不自動重讀;平常重新整理網頁也會重讀)。
+  //    EVT_COLORS:每個活動依序用的圓點顏色(超過就循環)。EVT_DOT:圓點大小(radius 半徑、weight 外框粗細)。
+  //    EVT_ICON:CSV 沒填「圖示」時活動預設用的 emoji;EVT_PIN:加入探測清單後,地圖上圖釘的 emoji(CSV 的圖示是 emoji 就用它)。
+  //    EVT_LABEL_ZOOM / EVT_LABEL_MAX:地圖放大到第幾級以上、而且畫面內的活動點不超過幾個時,直接在圓點上方顯示名稱。
+  //    EVT_LIST_PAGE:「附近的活動地點」每次列幾筆。
+  const EVT_URL = 'data/events.csv';
+  const EVT_SHOW_INACTIVE = false, EVT_RELOAD_MIN = 30;
+  const EVT_COLORS = ['#e8731a', '#d63384', '#0d9488', '#6f42c1', '#2f7bc0', '#b58900'];
+  const EVT_DOT = { radius: 9, weight: 3 };
+  const EVT_ICON = '🎪', EVT_PIN = '🎪';
+  const EVT_LABEL_ZOOM = 17, EVT_LABEL_MAX = 60, EVT_LIST_PAGE = 20;
+
   const PROBE_KEY = 'pikmin-probe', PROBE_RENDER_KEY = 'pikmin-probe-render';
   const probe = { entries: [], base: '', idw: 1, tileU: 50000, types: [], zh: {}, counts: [], names: [],
                   results: [], markers: [], layer: null, ref: null, total: 0, listN: PROBE_PAGE, busy: false,
@@ -2941,7 +3017,8 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
     iconCreateFunction: c => L.divIcon({ html: `<div><span>${c.getChildCount()}</span></div>`,
                                          className: 'marker-cluster probe-cluster', iconSize: L.point(40, 40) }) });
   const probeDots = L.featureGroup();                                  // 'canvas' 模式用的圖層:所有點直接放這裡,不群集
-  // const probeRenderer = L.canvas({ padding: .5 });                      // 'canvas' 模式專用的畫布
+  // 點一律畫在地圖共用的那張 canvas(地圖建立時的 preferCanvas):地圖搜尋、探測、活動都不另外建 canvas(不要再指定 renderer),
+  // 因為 canvas 疊在一起時,最上面那張會吃掉點擊,底下的點就點不到。
   const probeHost = () => probe.render === 'canvas' ? probeDots : probeCluster;
   function probeLayerClear() { probeCluster.clearLayers(); probeDots.clearLayers(); }
   function probeLayerAdd(ms) { if (probe.render === 'canvas') ms.forEach(m => probeDots.addLayer(m)); else probeCluster.addLayers(ms); }
@@ -3083,10 +3160,9 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   function probeRender() {
     probeLayerClear();
     syncPads();
-    //const rows = probe.results, dot = probe.render === 'canvas' ? { renderer: probeRenderer } : {};
-    const rows = probe.results, dot = probe.render === 'canvas' ;
+    const rows = probe.results;
     probe.markers = rows.map(it => {
-      const m = L.circleMarker([it.lat, it.lon], { ...PROBE_DOT, ...dot, color: '#1c2a22',
+      const m = L.circleMarker([it.lat, it.lon], { ...PROBE_DOT, color: '#1c2a22',
                                                    fillColor: probeColor(it.n), fillOpacity: .95 });
       m.bindPopup(() => probePopup(it), popupOpts);
       return m;
@@ -3100,6 +3176,7 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
     $('#pCsv').disabled = $('#pGeo').disabled = !rows.length;
     probeRenderList();
     pqRender();
+    if (window._evtReady) evtFront();                 // 活動點留在最上層,才不會被探測的點蓋住點不到
   }
   function probeRenderList() {
     const rows = probe.results.slice(0, probe.listN);
@@ -3433,14 +3510,16 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
       const s = JSON.parse(localStorage.getItem(PLIST_KEY) || 'null');
       if (!s) return;
       plist.items = (Array.isArray(s.items) ? s.items : []).filter(x => x && typeof x.key === 'string' && isFinite(x.lat) && isFinite(x.lon))
-        .map(x => ({ key: x.key, lat: +x.lat, lon: +x.lon, types: Array.isArray(x.types) ? x.types : [], t: x.t || 0, added: x.added || 0, done: !!x.done }));
+        .map(x => ({ key: x.key, lat: +x.lat, lon: +x.lon, types: Array.isArray(x.types) ? x.types : [], t: x.t || 0, added: x.added || 0, done: !!x.done,
+                     kind: x.kind === 'evt' ? 'evt' : 'probe', name: x.name || '', event: x.event || '', icon: x.icon || '', note: x.note || '' }));
       plist.hud = s.hud !== false; plist.mode = s.mode === 'heading' ? 'heading' : 'north'; plist.target = s.target || null;
     } catch (e) { /* ignore */ }
   }
   function plistSave() {                           // 只存要保留的欄位(距離、方位是即時算的,不存)
     try {
       localStorage.setItem(PLIST_KEY, JSON.stringify({ hud: plist.hud, mode: plist.mode, target: plist.target,
-        items: plist.items.map(x => ({ key: x.key, lat: x.lat, lon: x.lon, types: x.types, t: x.t, added: x.added, done: x.done })) }));
+        items: plist.items.map(x => ({ key: x.key, lat: x.lat, lon: x.lon, types: x.types, t: x.t, added: x.added, done: x.done,
+                                      kind: x.kind, name: x.name, event: x.event, icon: x.icon, note: x.note })) }));
     } catch (e) {}
   }
 
@@ -3468,7 +3547,8 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
     svg.dataset.deg = next; svg.style.transform = `rotate(${next}deg)`;
   }
   const plTypeHtml = en => `<span class="t">${probeIconHtml(en)}${esc(probe.zh[en] || en)}</span>`;
-  const plTypesHtml = (x, max) => !x.types.length ? '<span class="t">(沒有類型資訊)</span>'
+  const plTypesHtml = (x, max) => x.kind === 'evt' ? evtItemHtml(x)                   // 活動點:顯示名稱和活動名稱
+    : !x.types.length ? '<span class="t">(沒有類型資訊)</span>'
     : x.types.slice(0, max).map(plTypeHtml).join('') + (x.types.length > max ? `<span class="t">+${x.types.length - max}</span>` : '');
 
   /* ---- 清單分頁 */
@@ -3539,16 +3619,18 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
     plist.items.forEach(x => {
       if (plArrived(x) && !x.at) {
         x.at = true;
-        setStatus(`到了:${x.types.map(en => probe.zh[en] || en).join('、') || '探測點'}`);
+        setStatus(`到了:${plLabel(x)}`);
         if (PLIST_VIBRATE && navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) {} }
       } else if (x.at && x.dist > PLIST_ARRIVE_M * 1.6) x.at = false;
     });
   }
 
   /* ---- 地圖上的圖釘 */
+  const plPinChar = x => x.done ? PLIST_PIN_DONE : x.kind === 'evt' ? (x.icon && !PROBE_IMG_RE.test(x.icon) ? x.icon : EVT_PIN) : PLIST_PIN;
+  const plLabel = x => x.kind === 'evt' ? x.name : (x.types.map(en => probe.zh[en] || en).join('、') || '探測點');
   function plPinIcon(x, isTarget) {
     return L.divIcon({ className: `pk-pin${x.done ? ' done' : ''}${isTarget ? ' target' : ''}`, iconSize: [30, 30], iconAnchor: [15, 15],
-                       html: `<span>${x.done ? PLIST_PIN_DONE : PLIST_PIN}</span>` });
+                       html: `<span>${plPinChar(x)}</span>` });
   }
   function plistPopup(x) {
     plistCompute();
@@ -3576,12 +3658,13 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
 
   /* ---- 整體更新 */
   function plistRender() { plistRenderList(true); plistSyncPins(); plistHud(); plistLine(); plistModeNote(); }
-  function plistChanged() { plistSave(); plistRender(); if (probe.results.length) probeRenderList(); }
+  function plistChanged() { plistSave(); plistRender(); if (probe.results.length) probeRenderList(); if (window._evtReady) evtRenderList(true); }
   function plistTick() {                           // 定位更新時呼叫;最多每 PLIST_TICK_MS 刷新一次
     const wait = PLIST_TICK_MS - (performance.now() - plist.lastTick);
     if (wait > 0) { if (!plist.timer) plist.timer = setTimeout(() => { plist.timer = 0; plistTick(); }, wait); return; }
     plist.lastTick = performance.now();
     plistRenderList(false); plistHud(); plistLine(); plistArrival(); plistModeNote();
+    if (window._evtReady) evtListTick();             // 「活動」分頁的距離也跟著更新
   }
   window._plReady = true;
   map.on('moveend', () => { if (!loc.ll) plistTick(); });          // 沒有定位時,距離是從畫面中心算的,地圖移動就要更新
@@ -3671,6 +3754,296 @@ ${samples.map(p => '      ' + pt('trkpt', p, p.t)).join('\n')}
   plistSetMode(plist.mode, false);                 // 會一併畫出清單、圖釘要另外同步
   plistRender();
 
+
+  /* ---------------------------------------------------------------- 活動地點(期間限定活動會出現的地點)
+     資料:EVT_URL 指定的 CSV(預設 data/events.csv),至少要有「名稱」和「座標」。換活動只要改 CSV,不用動這份網頁。
+     地圖上的點畫在「地圖共用的那張 canvas」(不指定 renderer),和地圖搜尋、探測的點同一張,所以不會互相擋住點擊;
+     其他圖層重畫後會呼叫 evtFront() 把活動點拉回最上層。活動點可以像探測點一樣加入探測清單。設定見設定區 ⑭。 */
+
+  /* @evt-pure-start CSV 解析、期間判斷:不碰 DOM */
+  const EVT_COLS = {                               // 欄位名稱(忽略大小寫、空白、底線、連字號)→ 認得的別名
+    name: ['name', '名稱', '名称', '地點', '地點名稱', '地点', '店名', 'title', 'place'],
+    lat: ['lat', 'latitude', '緯度', '纬度'],
+    lon: ['lon', 'lng', 'long', 'longitude', '經度', '经度'],
+    coord: ['coord', 'coords', 'coordinate', 'coordinates', '座標', '坐标', 'latlng', 'latlon', 'location'],
+    event: ['event', '活動', '活動名稱', '活动', 'group', '分類', '類別'],
+    start: ['start', 'startdate', '開始', '開始日期', '起', 'from', 'begin'],
+    end: ['end', 'enddate', '結束', '結束日期', '迄', 'to', 'until'],
+    icon: ['icon', '圖示', '图标', 'emoji'],
+    note: ['note', 'notes', '備註', '备注', '說明', 'memo', 'description'],
+  };
+  function csvDelim(text) {                        // 看第一行哪種分隔符號最多(逗號 / Tab / 分號)
+    const line = text.split('\n').find(l => l.trim() && !l.trim().startsWith('#')) || '';
+    const cnt = { ',': 0, '\t': 0, ';': 0 }; let q = false, best = ',', n = -1;
+    for (const c of line) { if (c === '"') q = !q; else if (!q && c in cnt) cnt[c]++; }
+    for (const d of Object.keys(cnt)) if (cnt[d] > n) { n = cnt[d]; best = d; }
+    return best;
+  }
+  function csvRows(text, delim) {                  // 標準 CSV:雙引號包住的欄位可以有逗號、換行,"" 代表一個引號
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else if (c === '"' && cur === '') q = true;
+      else if (c === delim) { row.push(cur); cur = ''; }
+      else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else if (c !== '\r') cur += c;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+  function evtDate(s, endOfDay) {                  // 2026-10-20 / 2026/10/20 / 2026年10月20日(可帶 時:分)→ 毫秒;空白 → null;看不懂 → NaN
+    s = String(s || '').trim();
+    if (!s) return null;
+    const m = /^(\d{4})\D+(\d{1,2})\D+(\d{1,2})(?:\D+(\d{1,2}):(\d{2}))?/.exec(s);
+    if (!m) return NaN;
+    const y = +m[1], mo = +m[2], d = +m[3];
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return NaN;
+    if (m[4] !== undefined) return new Date(y, mo - 1, d, +m[4], +m[5], endOfDay ? 59 : 0, endOfDay ? 999 : 0).getTime();
+    return endOfDay ? new Date(y, mo - 1, d, 23, 59, 59, 999).getTime() : new Date(y, mo - 1, d, 0, 0, 0, 0).getTime();   // 只寫日期:結束算到當天結束
+  }
+  function evtParse(text) {                        // -> { items:[{key,name,lat,lon,event,start,end,icon,note}], warnings:[字串] }
+    const items = [], warnings = [], seen = new Set();
+    text = String(text).replace(/^\uFEFF/, '');
+    const rows = csvRows(text, csvDelim(text)).filter(r => r.some(c => String(c).trim() !== '') && !String(r[0]).trim().startsWith('#'));
+    if (!rows.length) return { items, warnings };
+    const norm = s => String(s).trim().toLowerCase().replace(/[\s_\-]/g, '');
+    const hdr = rows[0].map(norm), col = {};
+    for (const k of Object.keys(EVT_COLS)) col[k] = hdr.findIndex(h => EVT_COLS[k].includes(h));
+    let first = 1;
+    if (!(col.name >= 0 && ((col.lat >= 0 && col.lon >= 0) || col.coord >= 0))) {            // 沒有標題列:依序是 名稱,緯度,經度,活動,開始,結束,圖示,備註
+      Object.assign(col, { name: 0, lat: 1, lon: 2, event: 3, start: 4, end: 5, icon: 6, note: 7, coord: -1 }); first = 0;
+    }
+    for (let i = first; i < rows.length; i++) {
+      const r = rows[i], at = `第 ${i + 1} 列`, get = k => col[k] >= 0 ? String(r[col[k]] ?? '').trim() : '';
+      let lat, lon;
+      if (col.lat >= 0 && col.lon >= 0) { lat = parseFloat(get('lat')); lon = parseFloat(get('lon')); }
+      else { const p = get('coord').split(/[\s,;，、]+/).filter(Boolean); lat = parseFloat(p[0]); lon = parseFloat(p[1]); }
+      if (Math.abs(lat) > 90 && Math.abs(lon) <= 90) [lat, lon] = [lon, lat];                // 經緯度填反了(緯度不可能超過 90):自動對調
+      if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { warnings.push(`${at}:座標看不懂,略過`); continue; }
+      const name = get('name') || '(未命名)';
+      let st = evtDate(get('start'), false), en = evtDate(get('end'), true);
+      if (Number.isNaN(st)) { warnings.push(`${at}:開始日期看不懂,當作沒有限制`); st = null; }
+      if (Number.isNaN(en)) { warnings.push(`${at}:結束日期看不懂,當作沒有限制`); en = null; }
+      if (st !== null && en !== null && st > en) { warnings.push(`${at}:開始日期比結束日期晚,已對調`); [st, en] = [en, st]; }
+      const key = `evt:${pkKey(lat, lon)}|${name}`;
+      if (seen.has(key)) continue;                                                           // 同名同座標重複列:只留一個
+      seen.add(key);
+      items.push({ key, name, lat, lon, event: get('event'), start: st, end: en, icon: get('icon'), note: get('note') });
+    }
+    return { items, warnings };
+  }
+  const evtStatus = (it, now) => it.start !== null && now < it.start ? 'upcoming' : it.end !== null && now > it.end ? 'ended' : 'active';
+  const evtFmtDate = ms => { const d = new Date(ms), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+  const evtPeriodText = it => it.start !== null && it.end !== null ? `${evtFmtDate(it.start)} ~ ${evtFmtDate(it.end)}`
+    : it.start !== null ? `${evtFmtDate(it.start)} 起` : it.end !== null ? `至 ${evtFmtDate(it.end)}` : '';
+  function evtGroupsOf(items, now) {               // 依「活動」分組:{ key, label, count, status, start, end, icon }
+    const g = new Map();
+    items.forEach(it => {
+      const k = it.event || '';
+      let x = g.get(k);
+      if (!x) g.set(k, x = { key: k, label: k || '(未分類)', count: 0, active: 0, upcoming: 0, start: null, end: null, icon: '' });
+      x.count++;
+      const s = evtStatus(it, now); if (s === 'active') x.active++; else if (s === 'upcoming') x.upcoming++;
+      if (it.start !== null && (x.start === null || it.start < x.start)) x.start = it.start;
+      if (it.end !== null && (x.end === null || it.end > x.end)) x.end = it.end;
+      if (!x.icon && it.icon) x.icon = it.icon;
+    });
+    g.forEach(x => { x.status = x.active ? 'active' : x.upcoming === x.count ? 'upcoming' : 'ended'; });
+    return g;
+  }
+  /* @evt-pure-end */
+
+  const EVT_KEY = 'pikmin-evt', EVT_ST = { active: '進行中', upcoming: '尚未開始', ended: '已結束' };
+  const evt = { items: [], groups: [], hidden: new Set(), on: true, showInactive: EVT_SHOW_INACTIVE, layer: L.featureGroup().addTo(map),
+                markers: new Map(), loadedAt: 0, listN: EVT_LIST_PAGE, sig: '', vis: '', lastList: 0, frontT: 0, src: '' };
+  try {
+    const s = JSON.parse(localStorage.getItem(EVT_KEY) || 'null');
+    if (s) { evt.on = s.on !== false; evt.hidden = new Set(Array.isArray(s.hidden) ? s.hidden : []); if (typeof s.inactive === 'boolean') evt.showInactive = s.inactive; }
+  } catch (e) { /* ignore */ }
+  const evtSave = () => { try { localStorage.setItem(EVT_KEY, JSON.stringify({ on: evt.on, hidden: [...evt.hidden], inactive: evt.showInactive })); } catch (e) {} };
+  const evtVisible = (it, now = Date.now()) => evt.on && !evt.hidden.has(it.event || '') && (evt.showInactive || evtStatus(it, now) === 'active');
+  const evtGroupOf = it => evt.groups.find(g => g.key === (it.event || ''));
+  function evtIconHtml(v) {                        // emoji 或小圖片(寫法同探測類型圖示)
+    v = v || EVT_ICON;
+    return PROBE_IMG_RE.test(v) ? `<span class="ticon"><img src="${esc(v)}" alt="" loading="lazy" draggable="false"></span>`
+                                : `<span class="ticon" aria-hidden="true">${esc(v)}</span>`;
+  }
+  function evtItemHtml(x) {                        // 給探測清單用:[圖示] 名稱 + 活動名稱
+    return `<span class="t">${evtIconHtml(x.icon)}${esc(x.name)}</span>` + (x.event ? `<span class="t evt-sub">${esc(x.event)}</span>` : '');
+  }
+
+  /* ---- 載入 CSV */
+  function evtDecode(buf) {                        // 先當 UTF-8;不是的話(Windows 中文 Excel 另存的 CSV 常是 Big5)改用 Big5
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch (e) { try { return new TextDecoder('big5').decode(buf); } catch (e2) { return new TextDecoder().decode(buf); } }
+  }
+  function evtApply(text, source) {
+    const res = evtParse(text);
+    evt.items = res.items; evt.loadedAt = Date.now(); evt.src = source;
+    const now = Date.now(), g = evtGroupsOf(evt.items, now);
+    evt.groups = [...g.values()].map((x, i) => ({ ...x, color: EVT_COLORS[i % EVT_COLORS.length] }));
+    const st = $('#evStatus'), act = evt.items.filter(it => evtStatus(it, now) === 'active').length;
+    st.classList.toggle('err', !!res.warnings.length);
+    st.textContent = `已載入 ${evt.items.length} 個活動地點、${evt.groups.length} 個活動(目前期間內 ${act} 個)。來源:${source}`
+      + (res.warnings.length ? `。有 ${res.warnings.length} 列有問題:${res.warnings.slice(0, 3).join(';')}${res.warnings.length > 3 ? '…' : ''}` : '');
+    if (res.warnings.length) console.warn('活動 CSV:', res.warnings);
+    evtAll();
+  }
+  async function evtLoad(silent) {                 // 讀網站上的 CSV(每次都跟伺服器確認有沒有更新)
+    try {
+      const r = await fetch(EVT_URL, { cache: 'no-cache' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = evtDecode(await r.arrayBuffer());
+      if (/^\s*<(!doctype|html)/i.test(text)) throw new Error('伺服器回的是網頁,不是 CSV');    // 有些伺服器找不到檔案時會回首頁
+      evtApply(text, EVT_URL);
+    } catch (e) {
+      if (!evt.items.length) { $('#evStatus').classList.remove('err'); $('#evStatus').textContent = `沒有找到 ${EVT_URL}(目前沒有活動時這是正常的)。把 CSV 放到網站的這個位置,重新整理就會出現;格式見下方說明。`; }
+      else if (!silent) setStatus(`重新讀取活動 CSV 失敗:${e.message}`, true);
+    }
+  }
+  $('#evReload').onclick = () => evtLoad(false);
+  $('#evLoad').onclick = () => $('#evFile').click();
+  $('#evFile').addEventListener('change', async e => {         // 手動選檔:暫時載入(不存起來),方便先試、或手機上不想重新部署時用
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try { evtApply(evtDecode(await f.arrayBuffer()), `${f.name}(暫時載入,重新整理後會回到 ${EVT_URL})`); }
+    catch (err) { setStatus(`${f.name}:${err.message}`, true); }
+  });
+
+  /* ---- 地圖上的點 */
+  function evtRender() {
+    evt.layer.clearLayers(); evt.markers.clear();
+    const now = Date.now(); let vis = [];
+    evt.items.forEach(it => {
+      if (!evtVisible(it, now)) return;
+      const g = evtGroupOf(it), active = evtStatus(it, now) === 'active';
+      const m = L.circleMarker([it.lat, it.lon], { ...EVT_DOT, color: '#3b2a00', fillColor: g ? g.color : EVT_COLORS[0], fillOpacity: active ? .95 : .4 });
+      m._name = it.name;                           // 不指定 renderer:用地圖共用的那張 canvas
+      m.bindPopup(() => evtPopup(it), popupOpts);
+      evt.layer.addLayer(m); evt.markers.set(it.key, m); vis.push(it.key);
+    });
+    evt.vis = vis.join('|');
+    evtLabels(); evtFront();
+    $('#evCount').textContent = evt.items.length ? `地圖上顯示 ${vis.length} / ${evt.items.length} 個` : '';
+  }
+  function evtLabels() {                           // 放大到一定程度、畫面內點不多時,直接在圓點上方顯示名稱(其餘是滑過 / 點一下才顯示)
+    const z = map.getZoom(), b = map.getBounds().pad(0.1); let n = 0;
+    evt.markers.forEach(m => {
+      const want = z >= EVT_LABEL_ZOOM && b.contains(m.getLatLng()) && ++n <= EVT_LABEL_MAX;
+      if (want === !!m._lab && m.getTooltip()) return;
+      m._lab = want; m.unbindTooltip();
+      m.bindTooltip(m._name, { permanent: want, direction: 'top', offset: [0, -10], className: 'evt-tip' });
+    });
+  }
+  function evtFront() { if (evt.layer.getLayers().length) evt.layer.bringToFront(); }      // 地圖搜尋 / 探測的點重畫後,活動點拉回最上層(同一張 canvas,最上面的才收得到點擊)
+  function evtFrontSoon() { clearTimeout(evt.frontT); evt.frontT = setTimeout(evtFront, 300); }
+  map.on('moveend zoomend', () => { evtLabels(); evtFrontSoon(); });
+
+  function evtPopup(it) {
+    const c = `${it.lat.toFixed(6)},${it.lon.toFixed(6)}`, now = Date.now(), st = evtStatus(it, now), per = evtPeriodText(it), ref = plistRef();
+    const d = haversine(ref.lat, ref.lng, it.lat, it.lon), b = bearingDeg(ref.lat, ref.lng, it.lat, it.lon);
+    return `<strong>${evtIconHtml(it.icon)}${esc(it.name)}</strong>`
+      + (it.event || per ? `<br>${esc([it.event, per].filter(Boolean).join(' · '))}${st !== 'active' ? ` · <b>${EVT_ST[st]}</b>` : ''}` : '')
+      + (it.note ? `<br>${esc(it.note)}` : '')
+      + `<br>${esc(fmtLen(d))} · ${compass8(b)}` + `<br><small>${c}</small>`
+      + `<br><a href="#" data-ev="add" data-key="${esc(it.key)}">${plistHas(it.key) ? PL_IN : PL_OUT}</a>`
+      + ` · <a href="https://www.google.com/maps/dir/?api=1&amp;destination=${c}" target="_blank" rel="noopener">導航</a>`
+      + ` · <a href="#" data-copy="${c}">複製座標</a>`;
+  }
+  map.on('popupopen', e => {                       // 彈出視窗內的 ☆(Leaflet 會擋 click 冒泡,所以開啟時直接綁)
+    const root = e.popup.getElement();
+    root && root.querySelectorAll('a[data-ev]').forEach(a => a.addEventListener('click', ev => {
+      ev.preventDefault();
+      const it = evt.items.find(x => x.key === a.dataset.key); if (!it) return;
+      a.textContent = plistToggleEvent(it) ? PL_IN : PL_OUT;
+    }));
+  });
+  function plistToggleEvent(it) {                  // 活動點:在清單就移除,不在就加入。回傳「現在是否在清單」
+    if (plistHas(it.key)) { plistRemove(it.key); setStatus('已從探測清單移除'); return false; }
+    plist.items.push({ key: it.key, kind: 'evt', lat: it.lat, lon: it.lon, name: it.name, event: it.event, icon: it.icon, note: it.note,
+                       types: [], t: 0, added: Date.now(), done: false });
+    plistChanged();
+    setStatus(`已加入探測清單(共 ${plist.items.length} 個)`);
+    return true;
+  }
+
+  /* ---- 「活動」分頁:活動分組開關、附近的活動地點 */
+  function evtRenderGroups() {
+    $('#evGroups').innerHTML = evt.groups.map((g, i) => `<label class="chip" style="--g:${g.color}" title="${esc(evtPeriodText(g))}">
+        <input type="checkbox" data-g="${i}" ${evt.hidden.has(g.key) ? '' : 'checked'}><span>${evtIconHtml(g.icon)}${esc(g.label)}<small>${g.count}</small>
+        <em class="st-${g.status}">${EVT_ST[g.status]}</em></span></label>`).join('');
+  }
+  function evtRows() {
+    const ref = plistRef(), now = Date.now();
+    return evt.items.filter(it => evtVisible(it, now))
+      .map(it => ({ it, dist: haversine(ref.lat, ref.lng, it.lat, it.lon), brg: bearingDeg(ref.lat, ref.lng, it.lat, it.lon) }))
+      .sort((a, b) => a.dist - b.dist);
+  }
+  const evtDistHtml = r => `${esc(fmtLen(r.dist))}<small>${compass8(r.brg)}</small>`;
+  function evtRenderList(force) {
+    const ref = plistRef(), rows = evtRows(), shown = rows.slice(0, evt.listN), ul = $('#evList'), sig = shown.map(r => r.it.key).join('|');
+    $('#evRef').textContent = rows.length ? (ref.gps ? '距離與方向:從我的位置算' : '還沒有定位:暫時從畫面中心算') : '';
+    if (force || sig !== evt.sig) {
+      evt.sig = sig;
+      ul.innerHTML = shown.map((r, i) => { const on = plistHas(r.it.key), g = evtGroupOf(r.it);
+        return `<li data-key="${esc(r.it.key)}"><button type="button" class="pmain" data-go="${esc(r.it.key)}">
+          <span class="pd">${evtDistHtml(r)}</span><span class="pn" style="background:${g ? g.color : EVT_COLORS[0]}">${evtIconHtml(r.it.icon)}</span>
+          <span>${esc(r.it.name)}${r.it.event ? `<small class="evt-sub"> ${esc(r.it.event)}</small>` : ''}</span></button>
+          <button type="button" class="pstar${on ? ' on' : ''}" data-star="${esc(r.it.key)}" aria-pressed="${on}" aria-label="${on ? '從探測清單移除' : '加入探測清單'}">${on ? '★' : '☆'}</button></li>`; }).join('');
+    } else {                                       // 順序沒變:只原地更新距離與方向(走路時才不會點到一半按鈕被換掉)
+      const by = new Map(shown.map(r => [r.it.key, r]));
+      ul.querySelectorAll('li[data-key]').forEach(li => { const r = by.get(li.dataset.key); if (r) li.querySelector('.pd').innerHTML = evtDistHtml(r); });
+    }
+    $('#evMore').hidden = shown.length >= rows.length;
+    $('#evEmpty').hidden = rows.length > 0;
+  }
+  function evtListTick() {                         // 定位 / 地圖移動時更新距離(最多每 3 秒一次)
+    if (performance.now() - evt.lastList < 3000) return;
+    evt.lastList = performance.now(); evtRenderList(false);
+  }
+  map.on('moveend', () => { if (!loc.ll) evtListTick(); });
+  $('#evMore').onclick = () => { evt.listN += EVT_LIST_PAGE; evtRenderList(true); };
+  $('#evList').addEventListener('click', e => {
+    const s = e.target.closest('button[data-star]'), g = e.target.closest('button[data-go]');
+    if (s) { const it = evt.items.find(x => x.key === s.dataset.star); if (it) plistToggleEvent(it); return; }
+    const m = g && evt.markers.get(g.dataset.go); if (!m) return;
+    if (isMobile()) setSheet('peek');
+    map.setView(m.getLatLng(), Math.max(map.getZoom(), PROBE_FLY_ZOOM), { animate: false });
+    m.openPopup();
+  });
+  $('#evGroups').addEventListener('change', e => {
+    const b = e.target, g = evt.groups[+b.dataset.g]; if (!g) return;
+    b.checked ? evt.hidden.delete(g.key) : evt.hidden.add(g.key);
+    evtSave(); evtRender(); evtRenderList(true);
+  });
+
+  /* ---- 總開關:右側 🎪 按鈕、分頁裡的勾選 */
+  function evtSync() {
+    $('#evOn').checked = evt.on; $('#evInactive').checked = evt.showInactive;
+    const f = $('#evFab'); f.hidden = !evt.items.length; f.setAttribute('aria-pressed', String(evt.on));
+    f.title = evt.on ? '活動地點:顯示中(點一下隱藏)' : '活動地點:已隱藏(點一下顯示)';
+  }
+  function evtAll() { evtSync(); evtRenderGroups(); evtRender(); evtRenderList(true); }
+  $('#evOn').addEventListener('change', e => { evt.on = e.target.checked; evtSave(); evtAll(); });
+  $('#evInactive').addEventListener('change', e => { evt.showInactive = e.target.checked; evtSave(); evtAll(); });
+  $('#evFab').onclick = () => {
+    evt.on = !evt.on; evtSave(); evtAll();
+    setStatus(evt.on ? `顯示活動地點(${evt.markers.size} 個)` : '已隱藏活動地點');
+  };
+  function evtRefresh() {                          // 日期過了(活動開始 / 結束)就更新哪些點該顯示
+    const now = Date.now(), vis = evt.items.filter(it => evtVisible(it, now)).map(it => it.key).join('|');
+    if (vis !== evt.vis) evtAll();
+  }
+  setInterval(evtRefresh, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    evtRefresh();
+    if (EVT_RELOAD_MIN > 0 && Date.now() - evt.loadedAt > EVT_RELOAD_MIN * 60000) evtLoad(true);   // 放很久再切回來:順便重讀 CSV
+  });
+  window._evtReady = true;
+  evtSync();
+  evtLoad(true);
   /* ---------------------------------------------------------------- 啟動 */
   async function detectLocal() {                      // 不再只靠 build-www 注入的旗標:APK 內有資料包就走離線模式
     if (window.PIKMIN_LOCAL) return true;
