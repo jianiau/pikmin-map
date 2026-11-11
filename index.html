@@ -1802,6 +1802,7 @@
     rot.cum = rot.cum === null ? want : rot.cum + hdgDiff(want, rot.cum);
     icon.style.transform = `rotate(${rot.cum}deg)`;
     meUpdate();
+    if (typeof s2RedrawSoon === 'function') s2RedrawSoon();                             // 格線的範圍跟著轉,稍後重畫
   }
   function rotOnHeading() {                        // 指南針更新時:跟著轉(只在「面向在上」且地圖跟著我時;手動拖開地圖就先停住)
     if (rot.mode !== 'heading' || !loc.follow) return;
@@ -1991,7 +1992,9 @@
   } catch (e) {}
   const s2Save = () => { try { localStorage.setItem(S2_KEY, JSON.stringify(s2)); } catch (e) {} };
 
-  const s2Pane = map.createPane('s2Pane');               // 放在標記下面、底圖上面,而且不吃觸控
+  // 放在標記下面、底圖上面,而且不吃觸控。要和 overlayPane 放在「同一層」:有 leaflet-rotate 外掛(手機版)時,會平移 / 旋轉的圖層
+  // 都在它的旋轉層裡;預設放在最外層的 mapPane 的話,格線不會跟著地圖動,畫面上就看不到。沒有外掛時,這一層就是 mapPane,行為和以前一樣。
+  const s2Pane = map.createPane('s2Pane', map.getPane('overlayPane').parentNode);
   s2Pane.style.zIndex = 350; s2Pane.style.pointerEvents = 'none';
   const s2Renderer = L.canvas({ pane: 's2Pane', padding: 0.4 });
   const s2Group = L.layerGroup().addTo(map);
@@ -2011,6 +2014,13 @@
   }
   const fmtM = m => m < 10 ? m.toFixed(1) + ' m' : m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
 
+  // 目前畫面涵蓋的範圍:用畫面四個角算。地圖旋轉時畫面四角會超出原本「上北下南」的範圍,所以不能直接用 map.getBounds();沒旋轉時結果相同。
+  function s2ViewBounds() {
+    const s = map.getSize();
+    return L.latLngBounds([[0, 0], [s.x, 0], [0, s.y], [s.x, s.y]].map(p => map.containerPointToLatLng(p)));
+  }
+  let s2Timer = 0;
+  function s2RedrawSoon() { clearTimeout(s2Timer); s2Timer = setTimeout(s2Redraw, 300); }       // 旋轉時用:停一下再重畫,不要每次轉動都算
   function s2Redraw() {
     s2Group.clearLayers();
     if (!s2.on) return;
@@ -2027,7 +2037,7 @@
     };
     info.classList.remove('warn'); badge.classList.remove('warn');
     if (size.x * size.y * (1 + 2 * S2_PAD) ** 2 / (px * px) > S2_MAX_CELLS) return warn('太密,請放大地圖或改選較小的 level');
-    const bb = map.getBounds().pad(S2_PAD), box = { south: bb.getSouth(), north: bb.getNorth(), west: bb.getWest(), east: bb.getEast() };
+    const bb = s2ViewBounds().pad(S2_PAD), box = { south: bb.getSouth(), north: bb.getNorth(), west: bb.getWest(), east: bb.getEast() };
     const base = S2.cellsInBounds(box, lvl, S2_MAX_CELLS);
     if (!base) return warn('太密,請放大地圖或改選較小的 level');
     s2Group.addLayer(L.polyline(base, { renderer: s2Renderer, pane: 's2Pane', interactive: false,
@@ -2075,6 +2085,7 @@
   document.addEventListener('pointerdown', e => { if (s2Open && !e.target.closest('#s2Bar, #s2Fab')) s2SetOpen(false); }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && s2Open) s2SetOpen(false); });
   map.on('moveend', s2Redraw);                           // 平移 / 縮放結束才重算
+  map.on('rotate', s2RedrawSoon);                        // 地圖旋轉(手機版外掛會發出這個事件;沒有就不會觸發)
   s2RenderUi(); map.whenReady(s2Redraw);
 
 
